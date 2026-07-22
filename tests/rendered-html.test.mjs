@@ -54,6 +54,10 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(page, /DeviceOrientationEvent/);
   assert.match(page, /requestPermission/);
   assert.match(page, /deviceorientation/);
+  assert.match(page, /setSceneMotion/);
+  assert.match(page, /device-motion-active/);
+  assert.match(page, /Включить эффект движения/);
+  assert.match(page, /Движение включено/);
   assert.match(page, /decoding="async"/);
   assert.match(page, /TELEGRAM_MINI_APP_URL/);
   assert.match(page, /TELEGRAM_BOT_URL/);
@@ -67,6 +71,9 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(layout, /x-forwarded-host/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@keyframes ambient-float/);
+  assert.match(css, /@keyframes motion-invite/);
+  assert.match(css, /--scene-x:/);
+  assert.match(css, /--sage:/);
   assert.match(page, /className="work-grid"/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
@@ -78,6 +85,10 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(css, /\.portfolio\s*\{[^}]*touch-action:\s*pan-y pinch-zoom/s);
   assert.match(css, /button,\s*a\s*\{[^}]*touch-action:\s*manipulation/s);
   assert.match(css, /\.button::before\s*\{[^}]*pointer-events:\s*none/s);
+  assert.match(css, /\.motion-permission\s*\{[^}]*min-height:\s*58px/s);
+  assert.match(css, /@media \(max-width: 600px\)[\s\S]*?\.motion-permission\s*\{[^}]*min-height:\s*72px/s);
+  assert.match(css, /\.work-grid\[data-reveal\]\.is-visible \.work-card/);
+  assert.match(css, /\.work-image::after/);
   assert.match(css, /\.nav\s*\{[^}]*pointer-events:\s*none/s);
   assert.match(css, /\.nav\.is-open\s*\{[^}]*pointer-events:\s*auto/s);
   assert.doesNotMatch(css, /transition:[^;]*visibility/);

@@ -87,6 +87,13 @@ function Arrow({ direction = "right" }: { direction?: "left" | "right" }) {
   return <span aria-hidden="true">{direction === "left" ? "←" : "→"}</span>;
 }
 
+function setSceneMotion(root: HTMLElement, x: number, y: number) {
+  root.style.setProperty("--scene-x", `${x}px`);
+  root.style.setProperty("--scene-y", `${y}px`);
+  root.style.setProperty("--scene-x-inverse", `${-x}px`);
+  root.style.setProperty("--scene-y-inverse", `${-y}px`);
+}
+
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -181,9 +188,36 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const root = document.documentElement;
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (!finePointer.matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let frame = 0;
+    const reset = () => {
+      cancelAnimationFrame(frame);
+      setSceneMotion(root, 0, 0);
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      const x = (event.clientX / window.innerWidth - 0.5) * 18;
+      const y = (event.clientY / window.innerHeight - 0.5) * 12;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setSceneMotion(root, x, y));
+    };
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("blur", reset);
+    return () => {
+      reset();
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("blur", reset);
+    };
+  }, []);
+
+  useEffect(() => {
     const hero = heroRef.current;
     if (!hero || motionPermission !== "enabled" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    const root = document.documentElement;
     let frame = 0;
     let baseBeta: number | null = null;
     let baseGamma: number | null = null;
@@ -191,7 +225,6 @@ export default function Home() {
 
     const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value));
     const onOrientation = (event: DeviceOrientationEvent) => {
-      if (!heroVisible) return;
       if (event.beta === null || event.gamma === null) return;
       baseBeta ??= event.beta;
       baseGamma ??= event.gamma;
@@ -200,10 +233,13 @@ export default function Home() {
 
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        hero.style.setProperty("--hero-x", `${x * 8}px`);
-        hero.style.setProperty("--hero-y", `${y * 6}px`);
-        hero.style.setProperty("--phone-x", `${x * -11}px`);
-        hero.style.setProperty("--phone-y", `${y * -8}px`);
+        setSceneMotion(root, x * 13, y * 9);
+        if (heroVisible) {
+          hero.style.setProperty("--hero-x", `${x * 8}px`);
+          hero.style.setProperty("--hero-y", `${y * 6}px`);
+          hero.style.setProperty("--phone-x", `${x * -11}px`);
+          hero.style.setProperty("--phone-y", `${y * -8}px`);
+        }
       });
     };
 
@@ -222,11 +258,14 @@ export default function Home() {
     );
 
     hero.classList.add("is-motion-active");
+    root.classList.add("device-motion-active");
     visibilityObserver.observe(hero);
     window.addEventListener("deviceorientation", onOrientation, { passive: true });
     return () => {
       cancelAnimationFrame(frame);
       hero.classList.remove("is-motion-active");
+      root.classList.remove("device-motion-active");
+      setSceneMotion(root, 0, 0);
       visibilityObserver.disconnect();
       window.removeEventListener("deviceorientation", onOrientation);
     };
@@ -306,9 +345,9 @@ export default function Home() {
         <div className="hero-copy" data-reveal>
           <p className="eyebrow">Тонкая работа · спокойная атмосфера</p>
           <h1>
-            Маникюр,
-            <em>который говорит</em>
-            за вас
+            <span className="headline-line">Маникюр,</span>
+            <em className="headline-line">который говорит</em>
+            <span className="headline-line">за вас</span>
           </h1>
           <p className="hero-lead">
             Естественная форма, безупречное покрытие и внимание к деталям —
@@ -322,8 +361,17 @@ export default function Home() {
           </div>
           {motionPermission === "prompt" && (
             <button className="motion-permission" type="button" onClick={enableDeviceMotion}>
-              <span aria-hidden="true">◌</span> Включить движение от телефона
+              <span className="motion-permission-icon" aria-hidden="true">↻</span>
+              <span className="motion-permission-copy">
+                <strong>Включить эффект движения</strong>
+                <small>Наклоняйте телефон — детали будут двигаться за вами</small>
+              </span>
             </button>
+          )}
+          {motionPermission === "enabled" && (
+            <p className="motion-active-status" role="status">
+              <span aria-hidden="true">●</span> Движение включено — попробуйте наклонить телефон
+            </p>
           )}
           {motionPermission === "denied" && (
             <p className="motion-denied" role="status">Доступ к движению отключён в настройках браузера.</p>
