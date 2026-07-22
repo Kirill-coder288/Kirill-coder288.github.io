@@ -48,8 +48,10 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(page, /prefers-reduced-motion/);
   assert.match(page, /aria-expanded=\{isOpen\}/);
   assert.match(page, /gallery\.scrollTo/);
-  assert.match(page, /galleryActive/);
+  assert.doesNotMatch(page, /setInterval/);
+  assert.doesNotMatch(page, /pointermove/);
   assert.doesNotMatch(page, /window\.addEventListener\("scroll"/);
+  assert.match(page, /decoding="async"/);
   assert.match(page, /TELEGRAM_MINI_APP_URL/);
   assert.match(page, /TELEGRAM_BOT_URL/);
   assert.doesNotMatch(page, /\/api\b/);
@@ -57,6 +59,10 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(layout, /x-forwarded-host/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@keyframes ambient-float/);
+  assert.match(css, /scroll-snap-type: x proximity/);
+  assert.match(css, /touch-action: pan-x pan-y pinch-zoom/);
+  assert.doesNotMatch(css, /scroll-snap-type: x mandatory/);
+  assert.doesNotMatch(css, /overscroll-behavior-inline: contain/);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 

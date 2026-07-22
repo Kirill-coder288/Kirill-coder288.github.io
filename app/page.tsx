@@ -86,9 +86,6 @@ function Arrow({ direction = "right" }: { direction?: "left" | "right" }) {
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [galleryPaused, setGalleryPaused] = useState(false);
-  const [galleryActive, setGalleryActive] = useState(false);
-  const heroRef = useRef<HTMLElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -119,57 +116,6 @@ export default function Home() {
       document.documentElement.classList.remove("motion-ready");
     };
   }, []);
-
-  useEffect(() => {
-    const hero = heroRef.current;
-    const canParallax = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    if (!hero || !canParallax || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    let frame = 0;
-    const update = (event?: PointerEvent) => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const rect = hero.getBoundingClientRect();
-        const px = event ? (event.clientX - rect.left) / rect.width - 0.5 : 0;
-        const py = event ? (event.clientY - rect.top) / rect.height - 0.5 : 0;
-        hero.style.setProperty("--hero-x", `${px * 10}px`);
-        hero.style.setProperty("--hero-y", `${py * 8}px`);
-        hero.style.setProperty("--phone-x", `${px * -16}px`);
-        hero.style.setProperty("--phone-y", `${py * -12}px`);
-      });
-    };
-
-    const onPointerMove = (event: PointerEvent) => update(event);
-    const onPointerLeave = () => update();
-    hero.addEventListener("pointermove", onPointerMove);
-    hero.addEventListener("pointerleave", onPointerLeave);
-    return () => {
-      cancelAnimationFrame(frame);
-      hero.removeEventListener("pointermove", onPointerMove);
-      hero.removeEventListener("pointerleave", onPointerLeave);
-    };
-  }, []);
-
-  useEffect(() => {
-    const gallery = galleryRef.current;
-    if (!gallery || !("IntersectionObserver" in window)) {
-      setGalleryActive(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setGalleryActive(entry.isIntersecting),
-      { threshold: 0.2 },
-    );
-    observer.observe(gallery);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!galleryActive || galleryPaused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setInterval(() => moveGallery(1), 4200);
-    return () => window.clearInterval(timer);
-  }, [galleryActive, galleryPaused]);
 
   const moveGallery = (direction: -1 | 1) => {
     const gallery = galleryRef.current;
@@ -221,7 +167,7 @@ export default function Home() {
         </a>
       </header>
 
-      <section className="hero" id="top" ref={heroRef}>
+      <section className="hero" id="top">
         <div className="ambient ambient-one" aria-hidden="true" />
         <div className="ambient ambient-two" aria-hidden="true" />
 
@@ -335,15 +281,13 @@ export default function Home() {
         <div
           className="work-scroll"
           ref={galleryRef}
-          onPointerEnter={() => setGalleryPaused(true)}
-          onPointerLeave={() => setGalleryPaused(false)}
-          onFocus={() => setGalleryPaused(true)}
-          onBlur={() => setGalleryPaused(false)}
           data-reveal
         >
           {works.map(([src, title], index) => (
             <figure className="work-card" key={src}>
-              <div className="work-image"><img src={src} alt={title} loading={index > 1 ? "lazy" : "eager"} /></div>
+              <div className="work-image">
+                <img src={src} alt={title} width="900" height="1200" loading={index > 1 ? "lazy" : "eager"} decoding="async" />
+              </div>
               <figcaption><span>{String(index + 1).padStart(2, "0")}</span>{title}</figcaption>
             </figure>
           ))}
