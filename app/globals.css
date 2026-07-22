@@ -671,7 +671,7 @@ h2 {
 
 .portfolio {
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
   padding-right: max(4vw, calc((100vw - 1360px) / 2));
   padding-left: max(4vw, calc((100vw - 1360px) / 2));
   background: var(--cream);
