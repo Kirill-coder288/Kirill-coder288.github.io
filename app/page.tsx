@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 const TELEGRAM_MINI_APP_URL = "https://t.me/nogti000bot?startapp=landing";
 const TELEGRAM_BOT_URL = "https://t.me/nogti000bot";
+const telegramServiceUrl = (serviceId: number) => `https://t.me/nogti000bot?startapp=service_${serviceId}`;
 
 type OrientationEventConstructor = typeof DeviceOrientationEvent & {
   requestPermission?: () => Promise<PermissionState>;
@@ -11,32 +12,44 @@ type OrientationEventConstructor = typeof DeviceOrientationEvent & {
 
 const services = [
   {
+    id: 1,
     number: "01",
-    title: "Маникюр + покрытие",
-    text: "Снятие, бережная обработка, укрепление и покрытие в один тон.",
-    time: "1 ч 45 мин",
-    price: "2 500 ₽",
-  },
-  {
-    number: "02",
-    title: "Маникюр без покрытия",
-    text: "Чистая обработка, полировка и уход для естественных ногтей.",
+    title: "Маникюр",
+    text: "Бережная обработка, форма и аккуратный уход за натуральными ногтями.",
     time: "1 час",
-    price: "1 500 ₽",
+    price: "1 200 ₽",
   },
   {
+    id: 2,
+    number: "02",
+    title: "Маникюр + гель-лак",
+    text: "Маникюр, подготовка ногтевой пластины и тонкое покрытие в один тон.",
+    time: "2 часа",
+    price: "1 900 ₽",
+  },
+  {
+    id: 3,
     number: "03",
-    title: "Укрепление гелем",
-    text: "Тонкая архитектура и прочность без лишней толщины.",
-    time: "+ 25 мин",
-    price: "+ 600 ₽",
+    title: "Наращивание",
+    text: "Моделирование длины и формы с аккуратной архитектурой без лишней толщины.",
+    time: "3 часа",
+    price: "2 800 ₽",
   },
   {
+    id: 4,
     number: "04",
-    title: "Деликатный дизайн",
-    text: "Френч, втирка, точки или минималистичные акценты.",
-    time: "+ 15–30 мин",
-    price: "от 200 ₽",
+    title: "Снятие покрытия",
+    text: "Деликатное снятие материала с контролем состояния натуральных ногтей.",
+    time: "30 минут",
+    price: "500 ₽",
+  },
+  {
+    id: 5,
+    number: "05",
+    title: "Укрепление",
+    text: "Дополнительная прочность и выравнивание для тонких или гибких ногтей.",
+    time: "30 минут",
+    price: "700 ₽",
   },
 ];
 
@@ -49,18 +62,18 @@ const works = [
   ["/images/work-6-v2.webp", "Тёплый хром"],
 ];
 
-const reviews = [
+const commitments = [
   {
-    name: "Мария",
-    text: "Наконец нашла мастера, после которого покрытие выглядит тонко и носится без сколов. Идеальная форма.",
+    title: "Прозрачная запись",
+    text: "Цена и длительность видны до подтверждения, а свободные окна приходят из расписания мастера.",
   },
   {
-    name: "Екатерина",
-    text: "Очень спокойно, чисто и без конвейера. Анна слышит пожелания и всегда предлагает оттенок в точку.",
+    title: "Безопасные инструменты",
+    text: "Для каждого визита предусмотрен полный цикл очистки, дезинфекции и стерилизации.",
   },
   {
-    name: "Анастасия",
-    text: "Хожу уже второй год. Ногти стали крепче, а маникюр выглядит аккуратно даже через три недели.",
+    title: "Связь в Telegram",
+    text: "Подтверждение, перенос, отмена и напоминания остаются в одном привычном приложении.",
   },
 ];
 
@@ -79,7 +92,7 @@ const faqs = [
   },
   {
     q: "Можно перенести или отменить запись?",
-    a: "Да. Пожалуйста, предупредите не позднее чем за 24 часа — так я смогу предложить время другому клиенту и подобрать для вас новое окно.",
+    a: "Да, через раздел «Мои записи» в Telegram Mini App. Самостоятельный перенос и отмена доступны не позднее чем за 12 часов до визита; позже напишите мастеру.",
   },
 ];
 
@@ -323,7 +336,7 @@ export default function Home() {
           <a href="#services" onClick={(event) => jumpToSection(event, "services")}>Услуги</a>
           <a href="#portfolio" onClick={(event) => jumpToSection(event, "portfolio")}>Работы</a>
           <a href="#about" onClick={(event) => jumpToSection(event, "about")}>О мастере</a>
-          <a href="#reviews" onClick={(event) => jumpToSection(event, "reviews")}>Отзывы</a>
+          <a href="#reviews" onClick={(event) => jumpToSection(event, "reviews")}>Подход</a>
           <a href="#faq" onClick={(event) => jumpToSection(event, "faq")}>FAQ</a>
         </nav>
 
@@ -376,13 +389,11 @@ export default function Home() {
           {motionPermission === "denied" && (
             <p className="motion-denied" role="status">Доступ к движению отключён в настройках браузера.</p>
           )}
-          <div className="social-proof" aria-label="Рейтинг мастера 5 из 5">
-            <div className="avatar-stack" aria-hidden="true">
-              <span>М</span><span>Е</span><span>А</span>
-            </div>
+          <div className="social-proof" aria-label="Преимущества онлайн-записи">
+            <div className="avatar-stack" aria-hidden="true"><span>✓</span><span>↗</span><span>♡</span></div>
             <div>
-              <b>5.0 <span className="stars">★★★★★</span></b>
-              <small>более 200 довольных клиентов</small>
+              <b>Запись без звонков</b>
+              <small>подтверждение и напоминания в Telegram</small>
             </div>
           </div>
         </div>
@@ -399,8 +410,8 @@ export default function Home() {
               <small>онлайн-запись</small>
               <strong>Ваш идеальный<br />маникюр — здесь</strong>
               <div className="mini-slot">
-                <span>Ближайшее окно</span>
-                <b>Сегодня, 17:30</b>
+                <span>Онлайн-расписание</span>
+                <b>Запись с завтрашнего дня</b>
               </div>
               <a className="phone-booking-link" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">Выбрать время</a>
               <div className="phone-note">Запись откроется в Telegram</div>
@@ -422,7 +433,7 @@ export default function Home() {
             <p className="eyebrow">Услуги</p>
             <h2>Всё необходимое.<br /><em>Ничего лишнего.</em></h2>
           </div>
-          <p>Стоимость фиксируется до начала процедуры. Снятие моего покрытия входит в цену.</p>
+          <p>Актуальная стоимость и длительность совпадают с каталогом внутри Telegram Mini App.</p>
         </div>
 
         <div className="service-grid">
@@ -442,7 +453,7 @@ export default function Home() {
               </div>
               <a
                 className="service-booking-link"
-                href={TELEGRAM_MINI_APP_URL}
+                href={telegramServiceUrl(service.id)}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Записаться в Telegram: ${service.title}`}
@@ -476,24 +487,24 @@ export default function Home() {
 
       <section className="section about" id="about">
         <div className="about-photo" data-reveal>
-          <img src="/images/master.webp" alt="Мастер маникюра Анна в светлой студии" loading="lazy" />
-          <span>Анна · мастер и основатель</span>
+          <img src="/images/master.webp" alt="Демонстрационный портрет мастера маникюра" loading="lazy" />
+          <span>Профиль мастера · демонстрация</span>
         </div>
         <div className="about-copy" data-reveal style={{ "--delay": "100ms" } as React.CSSProperties}>
           <p className="eyebrow">О мастере</p>
           <h2>Красота начинается<br /><em>с ощущения заботы</em></h2>
           <p>
-            Я Анна, сертифицированный мастер маникюра. Уже 6 лет создаю
-            аккуратные, ноские покрытия и помогаю клиентам полюбить свои руки.
+            В работе важны аккуратная форма, тонкое покрытие и понятный результат,
+            который заранее обсуждается с клиентом.
           </p>
           <p>
-            Работаю без спешки: сначала обсуждаем привычки и пожелания, затем
+            Без спешки: сначала обсуждаются привычки и пожелания, затем
             выбираем форму, оттенок и материал именно под вас.
           </p>
-          <div className="about-stats">
-            <div><b>6+</b><span>лет опыта</span></div>
-            <div><b>500+</b><span>клиентов</span></div>
-            <div><b>30+</b><span>обучений</span></div>
+          <div className="about-stats about-values">
+            <div><b>01</b><span>без спешки</span></div>
+            <div><b>02</b><span>под ваши руки</span></div>
+            <div><b>03</b><span>чистый процесс</span></div>
           </div>
         </div>
       </section>
@@ -501,17 +512,17 @@ export default function Home() {
       <section className="section reviews" id="reviews">
         <div className="section-heading" data-reveal>
           <div>
-            <p className="eyebrow">Отзывы</p>
-            <h2>Возвращаются<br /><em>не только за маникюром</em></h2>
+            <p className="eyebrow">Стандарты сервиса</p>
+            <h2>Спокойно на каждом<br /><em>этапе записи</em></h2>
           </div>
-          <p>Небольшая выборка слов, которыми клиенты делятся после визита.</p>
+          <p>Здесь только те обещания, которые поддерживает сама система записи и рабочий процесс мастера.</p>
         </div>
         <div className="review-grid">
-          {reviews.map((review, index) => (
-            <article className="review-card" key={review.name} data-reveal style={{ "--delay": `${index * 90}ms` } as React.CSSProperties}>
-              <div className="review-top"><span className="stars">★★★★★</span><small>5.0</small></div>
-              <p>«{review.text}»</p>
-              <div className="review-author"><span>{review.name[0]}</span><b>{review.name}</b></div>
+          {commitments.map((item, index) => (
+            <article className="review-card" key={item.title} data-reveal style={{ "--delay": `${index * 90}ms` } as React.CSSProperties}>
+              <div className="review-top"><span className="standards-check">✓</span><small>стандарт</small></div>
+              <p>{item.text}</p>
+              <div className="review-author"><span>{String(index + 1).padStart(2, "0")}</span><b>{item.title}</b></div>
             </article>
           ))}
         </div>
@@ -582,6 +593,7 @@ export default function Home() {
           <a className="footer-booking-link" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">Записаться <Arrow /></a>
         </div>
         <small>© 2026 NAILÉ. Все права защищены.</small>
+        <small className="demo-notice">Демонстрационный проект: перед коммерческим запуском замените фотографии и сведения о мастере на подтверждённые материалы.</small>
       </footer>
     </main>
   );

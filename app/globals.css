@@ -117,6 +117,9 @@ img {
 .nav a,
 .footer-links a {
   position: relative;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
   font-size: 13px;
   letter-spacing: 0.01em;
 }
@@ -276,6 +279,7 @@ h2 {
 
 .text-link {
   display: inline-flex;
+  min-height: 44px;
   align-items: center;
   gap: 12px;
   padding: 6px 0;
@@ -489,7 +493,7 @@ h2 {
 .phone-booking-link {
   display: flex;
   width: 100%;
-  min-height: 39px;
+  min-height: 44px;
   align-items: center;
   justify-content: center;
   margin-top: 10px;
@@ -667,8 +671,8 @@ h2 {
   top: 25px;
   right: 25px;
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 50%;
@@ -905,6 +909,17 @@ h2 {
 .review-top small {
   color: var(--muted);
   font-size: 9px;
+}
+
+.standards-check {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sage-pale);
+  color: var(--sage-deep);
+  font-weight: 800;
 }
 
 .review-card > p {
@@ -1185,6 +1200,14 @@ footer > small {
   text-transform: uppercase;
 }
 
+footer > .demo-notice {
+  max-width: 760px;
+  margin-top: 0;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-transform: none;
+}
+
 .motion-ready [data-reveal] {
   opacity: 0;
   transform: translateY(28px);
@@ -1317,8 +1340,8 @@ footer > small {
     position: relative;
     z-index: 52;
     display: flex;
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -1607,7 +1630,7 @@ footer > small {
   }
 
   .phone-booking-link {
-    min-height: 31px;
+    min-height: 44px;
   }
 
   .trust-strip {
