@@ -4,10 +4,10 @@ packages:
 minimumReleaseAgeExclude:
   - postcss@8.5.22
 
-onlyBuiltDependencies:
-  - esbuild
-  - unrs-resolver
-  - workerd
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+  workerd: true
 
 overrides:
   sharp: 0.35.3
