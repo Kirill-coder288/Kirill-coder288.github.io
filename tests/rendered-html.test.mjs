@@ -68,6 +68,9 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.doesNotMatch(css, /scroll-snap-type/);
   assert.doesNotMatch(css, /overflow-x: scroll/);
   assert.doesNotMatch(css, /\.portfolio\s*\{[^}]*overflow:\s*hidden/s);
+  assert.doesNotMatch(css, /html\s*\{[^}]*scroll-behavior:\s*smooth/s);
+  assert.match(css, /html\s*\{[^}]*overflow-x:\s*clip/s);
+  assert.match(css, /\.portfolio\s*\{[^}]*touch-action:\s*pan-y pinch-zoom/s);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 

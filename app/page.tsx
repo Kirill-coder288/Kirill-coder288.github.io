@@ -174,7 +174,10 @@ export default function Home() {
     if (!coarsePointer || !("DeviceOrientationEvent" in window)) return;
 
     const OrientationEvent = window.DeviceOrientationEvent as OrientationEventConstructor;
-    setMotionPermission(typeof OrientationEvent.requestPermission === "function" ? "prompt" : "enabled");
+    const frame = requestAnimationFrame(() => {
+      setMotionPermission(typeof OrientationEvent.requestPermission === "function" ? "prompt" : "enabled");
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
