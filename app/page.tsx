@@ -389,11 +389,11 @@ export default function Home() {
           {motionPermission === "denied" && (
             <p className="motion-denied" role="status">Доступ к движению отключён в настройках браузера.</p>
           )}
-          <div className="social-proof" aria-label="Преимущества онлайн-записи">
+          <div className="social-proof" aria-label="Как подтверждается запись">
             <div className="avatar-stack" aria-hidden="true"><span>✓</span><span>↗</span><span>♡</span></div>
             <div>
-              <b>Запись без звонков</b>
-              <small>подтверждение и напоминания в Telegram</small>
+              <b>Заявка через Telegram</b>
+              <small>мастер напишет, уточнит детали и предоплату</small>
             </div>
           </div>
         </div>
@@ -563,7 +563,7 @@ export default function Home() {
           <p className="eyebrow">Запись в Telegram</p>
           <h2>Готовы к маникюру,<br /><em>который подходит вам?</em></h2>
           <p>Выберите услугу и удобное время в Mini App. Подтверждение записи придёт прямо в Telegram.</p>
-          <div className="booking-note"><span>✓</span> Быстро, удобно и без звонков</div>
+          <div className="booking-note"><span>✓</span> Мастер подтвердит запись в личном чате</div>
         </div>
 
         <div className="telegram-booking-card" data-reveal style={{ "--delay": "120ms" } as React.CSSProperties}>
