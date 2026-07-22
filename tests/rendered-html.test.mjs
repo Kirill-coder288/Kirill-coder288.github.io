@@ -57,6 +57,11 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(page, /decoding="async"/);
   assert.match(page, /TELEGRAM_MINI_APP_URL/);
   assert.match(page, /TELEGRAM_BOT_URL/);
+  assert.match(page, /const jumpToSection/);
+  assert.match(page, /event\.preventDefault\(\)/);
+  assert.match(page, /window\.history\.replaceState/);
+  assert.match(page, /window\.scrollTo\(0, top\)/);
+  assert.equal((page.match(/jumpToSection\(event,/g) ?? []).length, 11);
   assert.doesNotMatch(page, /\/api\b/);
   assert.match(layout, /generateMetadata/);
   assert.match(layout, /x-forwarded-host/);
@@ -71,6 +76,8 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.doesNotMatch(css, /html\s*\{[^}]*scroll-behavior:\s*smooth/s);
   assert.match(css, /html\s*\{[^}]*overflow-x:\s*clip/s);
   assert.match(css, /\.portfolio\s*\{[^}]*touch-action:\s*pan-y pinch-zoom/s);
+  assert.match(css, /button,\s*a\s*\{[^}]*touch-action:\s*manipulation/s);
+  assert.match(css, /\.button::before\s*\{[^}]*pointer-events:\s*none/s);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 

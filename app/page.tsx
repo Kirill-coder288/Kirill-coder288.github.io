@@ -246,10 +246,24 @@ export default function Home() {
     }
   };
 
+  const jumpToSection = (event: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    event.preventDefault();
+    const target = document.getElementById(sectionId);
+    if (!target) return;
+
+    const header = document.querySelector<HTMLElement>(".site-header");
+    const offset = (header?.offsetHeight ?? 0) + 14;
+    const top = Math.max(0, Math.round(window.scrollY + target.getBoundingClientRect().top - offset));
+
+    setMenuOpen(false);
+    window.history.replaceState(null, "", `#${sectionId}`);
+    window.scrollTo(0, top);
+  };
+
   return (
     <main>
       <header className="site-header" aria-label="Основная навигация">
-        <a className="brand" href="#top" aria-label="NAILÉ — на главную">
+        <a className="brand" href="#top" aria-label="NAILÉ — на главную" onClick={(event) => jumpToSection(event, "top")}>
           <span>NAILÉ</span>
           <small>маникюр с характером</small>
         </a>
@@ -267,11 +281,11 @@ export default function Home() {
         </button>
 
         <nav id="main-navigation" className={menuOpen ? "nav is-open" : "nav"}>
-          <a href="#services" onClick={() => setMenuOpen(false)}>Услуги</a>
-          <a href="#portfolio" onClick={() => setMenuOpen(false)}>Работы</a>
-          <a href="#about" onClick={() => setMenuOpen(false)}>О мастере</a>
-          <a href="#reviews" onClick={() => setMenuOpen(false)}>Отзывы</a>
-          <a href="#faq" onClick={() => setMenuOpen(false)}>FAQ</a>
+          <a href="#services" onClick={(event) => jumpToSection(event, "services")}>Услуги</a>
+          <a href="#portfolio" onClick={(event) => jumpToSection(event, "portfolio")}>Работы</a>
+          <a href="#about" onClick={(event) => jumpToSection(event, "about")}>О мастере</a>
+          <a href="#reviews" onClick={(event) => jumpToSection(event, "reviews")}>Отзывы</a>
+          <a href="#faq" onClick={(event) => jumpToSection(event, "faq")}>FAQ</a>
         </nav>
 
         <a
@@ -304,7 +318,7 @@ export default function Home() {
             <a className="button" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">
               Выбрать время <Arrow />
             </a>
-            <a className="text-link" href="#portfolio">Посмотреть работы <Arrow /></a>
+            <a className="text-link" href="#portfolio" onClick={(event) => jumpToSection(event, "portfolio")}>Посмотреть работы <Arrow /></a>
           </div>
           {motionPermission === "prompt" && (
             <button className="motion-permission" type="button" onClick={enableDeviceMotion}>
@@ -508,15 +522,15 @@ export default function Home() {
       </section>
 
       <footer>
-        <a className="brand footer-brand" href="#top">
+        <a className="brand footer-brand" href="#top" onClick={(event) => jumpToSection(event, "top")}>
           <span>NAILÉ</span>
           <small>маникюр с характером</small>
         </a>
         <p>Тихая эстетика. Точная работа. Ваши руки — только лучше.</p>
         <div className="footer-links">
-          <a href="#services">Услуги</a>
-          <a href="#portfolio">Портфолио</a>
-          <a href="#faq">FAQ</a>
+          <a href="#services" onClick={(event) => jumpToSection(event, "services")}>Услуги</a>
+          <a href="#portfolio" onClick={(event) => jumpToSection(event, "portfolio")}>Портфолио</a>
+          <a href="#faq" onClick={(event) => jumpToSection(event, "faq")}>FAQ</a>
           <a className="footer-booking-link" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">Записаться <Arrow /></a>
         </div>
         <small>© 2026 NAILÉ. Все права защищены.</small>

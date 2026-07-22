@@ -39,6 +39,7 @@ select {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 button {
@@ -163,6 +164,7 @@ img {
   height: 200%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
   content: "";
+  pointer-events: none;
   transform: rotate(18deg);
   transition: left 700ms ease;
 }
