@@ -1,35 +1,55 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const TELEGRAM_MINI_APP_URL = "https://t.me/nogti000bot?startapp=landing";
+const TELEGRAM_BOT_URL = "https://t.me/nogti000bot";
+const telegramServiceUrl = (serviceId: number) => `https://t.me/nogti000bot?startapp=service_${serviceId}`;
+
+type OrientationEventConstructor = typeof DeviceOrientationEvent & {
+  requestPermission?: () => Promise<PermissionState>;
+};
 
 const services = [
   {
+    id: 1,
     number: "01",
-    title: "Маникюр + покрытие",
-    text: "Снятие, бережная обработка, укрепление и покрытие в один тон.",
-    time: "1 ч 45 мин",
-    price: "2 500 ₽",
-  },
-  {
-    number: "02",
-    title: "Маникюр без покрытия",
-    text: "Чистая обработка, полировка и уход для естественных ногтей.",
+    title: "Маникюр",
+    text: "Бережная обработка, форма и аккуратный уход за натуральными ногтями.",
     time: "1 час",
-    price: "1 500 ₽",
+    price: "1 200 ₽",
   },
   {
+    id: 2,
+    number: "02",
+    title: "Маникюр + гель-лак",
+    text: "Маникюр, подготовка ногтевой пластины и тонкое покрытие в один тон.",
+    time: "2 часа",
+    price: "1 900 ₽",
+  },
+  {
+    id: 3,
     number: "03",
-    title: "Укрепление гелем",
-    text: "Тонкая архитектура и прочность без лишней толщины.",
-    time: "+ 25 мин",
-    price: "+ 600 ₽",
+    title: "Наращивание",
+    text: "Моделирование длины и формы с аккуратной архитектурой без лишней толщины.",
+    time: "3 часа",
+    price: "2 800 ₽",
   },
   {
+    id: 4,
     number: "04",
-    title: "Деликатный дизайн",
-    text: "Френч, втирка, точки или минималистичные акценты.",
-    time: "+ 15–30 мин",
-    price: "от 200 ₽",
+    title: "Снятие покрытия",
+    text: "Деликатное снятие материала с контролем состояния натуральных ногтей.",
+    time: "30 минут",
+    price: "500 ₽",
+  },
+  {
+    id: 5,
+    number: "05",
+    title: "Укрепление",
+    text: "Дополнительная прочность и выравнивание для тонких или гибких ногтей.",
+    time: "30 минут",
+    price: "700 ₽",
   },
 ];
 
@@ -42,18 +62,18 @@ const works = [
   ["/images/work-6-v2.webp", "Тёплый хром"],
 ];
 
-const reviews = [
+const commitments = [
   {
-    name: "Мария",
-    text: "Наконец нашла мастера, после которого покрытие выглядит тонко и носится без сколов. Идеальная форма.",
+    title: "Прозрачная запись",
+    text: "Цена и длительность видны до подтверждения, а свободные окна приходят из расписания мастера.",
   },
   {
-    name: "Екатерина",
-    text: "Очень спокойно, чисто и без конвейера. Анна слышит пожелания и всегда предлагает оттенок в точку.",
+    title: "Безопасные инструменты",
+    text: "Для каждого визита предусмотрен полный цикл очистки, дезинфекции и стерилизации.",
   },
   {
-    name: "Анастасия",
-    text: "Хожу уже второй год. Ногти стали крепче, а маникюр выглядит аккуратно даже через три недели.",
+    title: "Связь в Telegram",
+    text: "Подтверждение, перенос, отмена и напоминания остаются в одном привычном приложении.",
   },
 ];
 
@@ -72,7 +92,7 @@ const faqs = [
   },
   {
     q: "Можно перенести или отменить запись?",
-    a: "Да. Пожалуйста, предупредите не позднее чем за 24 часа — так я смогу предложить время другому клиенту и подобрать для вас новое окно.",
+    a: "Да, через раздел «Мои записи» в Telegram Mini App. Самостоятельный перенос и отмена доступны не позднее чем за 12 часов до визита; позже напишите мастеру.",
   },
 ];
 
@@ -80,15 +100,18 @@ function Arrow({ direction = "right" }: { direction?: "left" | "right" }) {
   return <span aria-hidden="true">{direction === "left" ? "←" : "→"}</span>;
 }
 
+function setSceneMotion(root: HTMLElement, x: number, y: number) {
+  root.style.setProperty("--scene-x", `${x}px`);
+  root.style.setProperty("--scene-y", `${y}px`);
+  root.style.setProperty("--scene-x-inverse", `${-x}px`);
+  root.style.setProperty("--scene-y-inverse", `${-y}px`);
+}
+
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [submitted, setSubmitted] = useState(false);
-  const [bookingPulse, setBookingPulse] = useState(false);
-  const [galleryPaused, setGalleryPaused] = useState(false);
-  const [galleryActive, setGalleryActive] = useState(false);
+  const [motionPermission, setMotionPermission] = useState<"unsupported" | "prompt" | "enabled" | "denied">("unsupported");
   const heroRef = useRef<HTMLElement>(null);
-  const galleryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     document.documentElement.classList.add("motion-ready");
@@ -121,86 +144,178 @@ export default function Home() {
 
   useEffect(() => {
     const hero = heroRef.current;
-    const canParallax = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    if (!hero || !canParallax || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (!hero || !finePointer.matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let frame = 0;
-    const update = (event?: PointerEvent) => {
+    let bounds: DOMRect | null = null;
+
+    const reset = () => {
+      cancelAnimationFrame(frame);
+      hero.classList.remove("is-interacting");
+      hero.style.setProperty("--hero-x", "0px");
+      hero.style.setProperty("--hero-y", "0px");
+      hero.style.setProperty("--phone-x", "0px");
+      hero.style.setProperty("--phone-y", "0px");
+      bounds = null;
+    };
+
+    const onPointerEnter = () => {
+      bounds = hero.getBoundingClientRect();
+      hero.classList.add("is-interacting");
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!bounds) bounds = hero.getBoundingClientRect();
+      const px = (event.clientX - bounds.left) / bounds.width - 0.5;
+      const py = (event.clientY - bounds.top) / bounds.height - 0.5;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const rect = hero.getBoundingClientRect();
-        const px = event ? (event.clientX - rect.left) / rect.width - 0.5 : 0;
-        const py = event ? (event.clientY - rect.top) / rect.height - 0.5 : 0;
         hero.style.setProperty("--hero-x", `${px * 10}px`);
-        hero.style.setProperty("--hero-y", `${py * 8}px`);
-        hero.style.setProperty("--phone-x", `${px * -16}px`);
-        hero.style.setProperty("--phone-y", `${py * -12}px`);
+        hero.style.setProperty("--hero-y", `${py * 7}px`);
+        hero.style.setProperty("--phone-x", `${px * -14}px`);
+        hero.style.setProperty("--phone-y", `${py * -10}px`);
       });
     };
 
-    const onPointerMove = (event: PointerEvent) => update(event);
-    const onPointerLeave = () => update();
+    hero.addEventListener("pointerenter", onPointerEnter);
     hero.addEventListener("pointermove", onPointerMove);
-    hero.addEventListener("pointerleave", onPointerLeave);
+    hero.addEventListener("pointerleave", reset);
     return () => {
       cancelAnimationFrame(frame);
+      hero.removeEventListener("pointerenter", onPointerEnter);
       hero.removeEventListener("pointermove", onPointerMove);
-      hero.removeEventListener("pointerleave", onPointerLeave);
+      hero.removeEventListener("pointerleave", reset);
     };
   }, []);
 
   useEffect(() => {
-    const gallery = galleryRef.current;
-    if (!gallery || !("IntersectionObserver" in window)) {
-      setGalleryActive(true);
-      return;
-    }
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    if (!coarsePointer || !("DeviceOrientationEvent" in window)) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => setGalleryActive(entry.isIntersecting),
-      { threshold: 0.2 },
-    );
-    observer.observe(gallery);
-    return () => observer.disconnect();
+    const OrientationEvent = window.DeviceOrientationEvent as OrientationEventConstructor;
+    const frame = requestAnimationFrame(() => {
+      setMotionPermission(typeof OrientationEvent.requestPermission === "function" ? "prompt" : "enabled");
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
-    if (!galleryActive || galleryPaused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setInterval(() => moveGallery(1), 4200);
-    return () => window.clearInterval(timer);
-  }, [galleryActive, galleryPaused]);
+    const root = document.documentElement;
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (!finePointer.matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-  const moveGallery = (direction: -1 | 1) => {
-    const gallery = galleryRef.current;
-    if (!gallery) return;
-    const card = gallery.querySelector<HTMLElement>(".work-card");
-    const step = (card?.offsetWidth ?? 320) + 18;
-    const atEnd = gallery.scrollLeft + gallery.clientWidth >= gallery.scrollWidth - step / 2;
-    const atStart = gallery.scrollLeft <= step / 2;
-    const left = direction === 1 && atEnd ? 0 : direction === -1 && atStart ? gallery.scrollWidth : gallery.scrollLeft + step * direction;
-    gallery.scrollTo({ left, behavior: "smooth" });
+    let frame = 0;
+    const reset = () => {
+      cancelAnimationFrame(frame);
+      setSceneMotion(root, 0, 0);
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      const x = (event.clientX / window.innerWidth - 0.5) * 18;
+      const y = (event.clientY / window.innerHeight - 0.5) * 12;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setSceneMotion(root, x, y));
+    };
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("blur", reset);
+    return () => {
+      reset();
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("blur", reset);
+    };
+  }, []);
+
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero || motionPermission !== "enabled" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const root = document.documentElement;
+    let frame = 0;
+    let baseBeta: number | null = null;
+    let baseGamma: number | null = null;
+    let heroVisible = true;
+
+    const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value));
+    const onOrientation = (event: DeviceOrientationEvent) => {
+      if (event.beta === null || event.gamma === null) return;
+      baseBeta ??= event.beta;
+      baseGamma ??= event.gamma;
+      const x = clamp(event.gamma - baseGamma, 18) / 18;
+      const y = clamp(event.beta - baseBeta, 18) / 18;
+
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        setSceneMotion(root, x * 13, y * 9);
+        if (heroVisible) {
+          hero.style.setProperty("--hero-x", `${x * 8}px`);
+          hero.style.setProperty("--hero-y", `${y * 6}px`);
+          hero.style.setProperty("--phone-x", `${x * -11}px`);
+          hero.style.setProperty("--phone-y", `${y * -8}px`);
+        }
+      });
+    };
+
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        heroVisible = entry.isIntersecting;
+        if (!heroVisible) {
+          cancelAnimationFrame(frame);
+          hero.style.setProperty("--hero-x", "0px");
+          hero.style.setProperty("--hero-y", "0px");
+          hero.style.setProperty("--phone-x", "0px");
+          hero.style.setProperty("--phone-y", "0px");
+        }
+      },
+      { threshold: 0.05 },
+    );
+
+    hero.classList.add("is-motion-active");
+    root.classList.add("device-motion-active");
+    visibilityObserver.observe(hero);
+    window.addEventListener("deviceorientation", onOrientation, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      hero.classList.remove("is-motion-active");
+      root.classList.remove("device-motion-active");
+      setSceneMotion(root, 0, 0);
+      visibilityObserver.disconnect();
+      window.removeEventListener("deviceorientation", onOrientation);
+    };
+  }, [motionPermission]);
+
+  const enableDeviceMotion = async () => {
+    const OrientationEvent = window.DeviceOrientationEvent as OrientationEventConstructor | undefined;
+    if (!OrientationEvent) return;
+
+    try {
+      const permission = typeof OrientationEvent.requestPermission === "function"
+        ? await OrientationEvent.requestPermission()
+        : "granted";
+      setMotionPermission(permission === "granted" ? "enabled" : "denied");
+    } catch {
+      setMotionPermission("denied");
+    }
   };
 
-  const goToBooking = () => {
-    setMenuOpen(false);
-    setBookingPulse(false);
-    window.requestAnimationFrame(() => {
-      setBookingPulse(true);
-      document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      window.setTimeout(() => setBookingPulse(false), 1400);
-    });
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const jumpToSection = (event: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     event.preventDefault();
-    setSubmitted(true);
-    event.currentTarget.reset();
+    const target = document.getElementById(sectionId);
+    if (!target) return;
+
+    const header = document.querySelector<HTMLElement>(".site-header");
+    const offset = (header?.offsetHeight ?? 0) + 14;
+    const top = Math.max(0, Math.round(window.scrollY + target.getBoundingClientRect().top - offset));
+
+    setMenuOpen(false);
+    window.history.replaceState(null, "", `#${sectionId}`);
+    window.scrollTo(0, top);
   };
 
   return (
     <main>
       <header className="site-header" aria-label="Основная навигация">
-        <a className="brand" href="#top" aria-label="NAILÉ — на главную">
+        <a className="brand" href="#top" aria-label="NAILÉ — на главную" onClick={(event) => jumpToSection(event, "top")}>
           <span>NAILÉ</span>
           <small>маникюр с характером</small>
         </a>
@@ -218,16 +333,22 @@ export default function Home() {
         </button>
 
         <nav id="main-navigation" className={menuOpen ? "nav is-open" : "nav"}>
-          <a href="#services" onClick={() => setMenuOpen(false)}>Услуги</a>
-          <a href="#portfolio" onClick={() => setMenuOpen(false)}>Работы</a>
-          <a href="#about" onClick={() => setMenuOpen(false)}>О мастере</a>
-          <a href="#reviews" onClick={() => setMenuOpen(false)}>Отзывы</a>
-          <a href="#faq" onClick={() => setMenuOpen(false)}>FAQ</a>
+          <a href="#services" onClick={(event) => jumpToSection(event, "services")}>Услуги</a>
+          <a href="#portfolio" onClick={(event) => jumpToSection(event, "portfolio")}>Работы</a>
+          <a href="#about" onClick={(event) => jumpToSection(event, "about")}>О мастере</a>
+          <a href="#reviews" onClick={(event) => jumpToSection(event, "reviews")}>Подход</a>
+          <a href="#faq" onClick={(event) => jumpToSection(event, "faq")}>FAQ</a>
         </nav>
 
-        <button className="button button-small header-cta" type="button" onClick={goToBooking}>
+        <a
+          className="button button-small header-cta"
+          href={TELEGRAM_MINI_APP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setMenuOpen(false)}
+        >
           Записаться
-        </button>
+        </a>
       </header>
 
       <section className="hero" id="top" ref={heroRef}>
@@ -237,27 +358,42 @@ export default function Home() {
         <div className="hero-copy" data-reveal>
           <p className="eyebrow">Тонкая работа · спокойная атмосфера</p>
           <h1>
-            Маникюр,
-            <em>который говорит</em>
-            за вас
+            <span className="headline-line">Маникюр,</span>
+            <em className="headline-line">который говорит</em>
+            <span className="headline-line">за вас</span>
           </h1>
           <p className="hero-lead">
             Естественная форма, безупречное покрытие и внимание к деталям —
             без спешки и лишнего.
           </p>
           <div className="hero-actions">
-            <button className="button" type="button" onClick={goToBooking}>
+            <a className="button" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">
               Выбрать время <Arrow />
-            </button>
-            <a className="text-link" href="#portfolio">Посмотреть работы <Arrow /></a>
+            </a>
+            <a className="text-link" href="#portfolio" onClick={(event) => jumpToSection(event, "portfolio")}>Посмотреть работы <Arrow /></a>
           </div>
-          <div className="social-proof" aria-label="Рейтинг мастера 5 из 5">
-            <div className="avatar-stack" aria-hidden="true">
-              <span>М</span><span>Е</span><span>А</span>
-            </div>
+          {motionPermission === "prompt" && (
+            <button className="motion-permission" type="button" onClick={enableDeviceMotion}>
+              <span className="motion-permission-icon" aria-hidden="true">↻</span>
+              <span className="motion-permission-copy">
+                <strong>Включить эффект движения</strong>
+                <small>Наклоняйте телефон — детали будут двигаться за вами</small>
+              </span>
+            </button>
+          )}
+          {motionPermission === "enabled" && (
+            <p className="motion-active-status" role="status">
+              <span aria-hidden="true">●</span> Движение включено — попробуйте наклонить телефон
+            </p>
+          )}
+          {motionPermission === "denied" && (
+            <p className="motion-denied" role="status">Доступ к движению отключён в настройках браузера.</p>
+          )}
+          <div className="social-proof" aria-label="Преимущества онлайн-записи">
+            <div className="avatar-stack" aria-hidden="true"><span>✓</span><span>↗</span><span>♡</span></div>
             <div>
-              <b>5.0 <span className="stars">★★★★★</span></b>
-              <small>более 200 довольных клиентов</small>
+              <b>Запись без звонков</b>
+              <small>подтверждение и напоминания в Telegram</small>
             </div>
           </div>
         </div>
@@ -274,11 +410,11 @@ export default function Home() {
               <small>онлайн-запись</small>
               <strong>Ваш идеальный<br />маникюр — здесь</strong>
               <div className="mini-slot">
-                <span>Ближайшее окно</span>
-                <b>Сегодня, 17:30</b>
+                <span>Онлайн-расписание</span>
+                <b>Запись с завтрашнего дня</b>
               </div>
-              <button type="button" onClick={goToBooking}>Выбрать время</button>
-              <div className="phone-note">Подтверждение в течение 15 минут</div>
+              <a className="phone-booking-link" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">Выбрать время</a>
+              <div className="phone-note">Запись откроется в Telegram</div>
             </div>
           </div>
         </div>
@@ -297,7 +433,7 @@ export default function Home() {
             <p className="eyebrow">Услуги</p>
             <h2>Всё необходимое.<br /><em>Ничего лишнего.</em></h2>
           </div>
-          <p>Стоимость фиксируется до начала процедуры. Снятие моего покрытия входит в цену.</p>
+          <p>Актуальная стоимость и длительность совпадают с каталогом внутри Telegram Mini App.</p>
         </div>
 
         <div className="service-grid">
@@ -315,9 +451,15 @@ export default function Home() {
                 <small>{service.time}</small>
                 <strong>{service.price}</strong>
               </div>
-              <button type="button" onClick={goToBooking} aria-label={`Записаться: ${service.title}`}>
+              <a
+                className="service-booking-link"
+                href={telegramServiceUrl(service.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Записаться в Telegram: ${service.title}`}
+              >
                 <Arrow />
-              </button>
+              </a>
             </article>
           ))}
         </div>
@@ -329,24 +471,14 @@ export default function Home() {
             <p className="eyebrow">Портфолио</p>
             <h2>Маникюр, который<br /><em>хочется рассматривать</em></h2>
           </div>
-          <div className="gallery-controls">
-            <button type="button" onClick={() => moveGallery(-1)} aria-label="Предыдущие работы"><Arrow direction="left" /></button>
-            <button type="button" onClick={() => moveGallery(1)} aria-label="Следующие работы"><Arrow /></button>
-          </div>
         </div>
 
-        <div
-          className="work-scroll"
-          ref={galleryRef}
-          onPointerEnter={() => setGalleryPaused(true)}
-          onPointerLeave={() => setGalleryPaused(false)}
-          onFocus={() => setGalleryPaused(true)}
-          onBlur={() => setGalleryPaused(false)}
-          data-reveal
-        >
+        <div className="work-grid" data-reveal>
           {works.map(([src, title], index) => (
             <figure className="work-card" key={src}>
-              <div className="work-image"><img src={src} alt={title} loading={index > 1 ? "lazy" : "eager"} /></div>
+              <div className="work-image">
+                <img src={src} alt={title} width="900" height="1200" loading={index > 1 ? "lazy" : "eager"} decoding="async" />
+              </div>
               <figcaption><span>{String(index + 1).padStart(2, "0")}</span>{title}</figcaption>
             </figure>
           ))}
@@ -355,24 +487,24 @@ export default function Home() {
 
       <section className="section about" id="about">
         <div className="about-photo" data-reveal>
-          <img src="/images/master.webp" alt="Мастер маникюра Анна в светлой студии" loading="lazy" />
-          <span>Анна · мастер и основатель</span>
+          <img src="/images/master.webp" alt="Демонстрационный портрет мастера маникюра" loading="lazy" />
+          <span>Профиль мастера · демонстрация</span>
         </div>
         <div className="about-copy" data-reveal style={{ "--delay": "100ms" } as React.CSSProperties}>
           <p className="eyebrow">О мастере</p>
           <h2>Красота начинается<br /><em>с ощущения заботы</em></h2>
           <p>
-            Я Анна, сертифицированный мастер маникюра. Уже 6 лет создаю
-            аккуратные, ноские покрытия и помогаю клиентам полюбить свои руки.
+            В работе важны аккуратная форма, тонкое покрытие и понятный результат,
+            который заранее обсуждается с клиентом.
           </p>
           <p>
-            Работаю без спешки: сначала обсуждаем привычки и пожелания, затем
+            Без спешки: сначала обсуждаются привычки и пожелания, затем
             выбираем форму, оттенок и материал именно под вас.
           </p>
-          <div className="about-stats">
-            <div><b>6+</b><span>лет опыта</span></div>
-            <div><b>500+</b><span>клиентов</span></div>
-            <div><b>30+</b><span>обучений</span></div>
+          <div className="about-stats about-values">
+            <div><b>01</b><span>без спешки</span></div>
+            <div><b>02</b><span>под ваши руки</span></div>
+            <div><b>03</b><span>чистый процесс</span></div>
           </div>
         </div>
       </section>
@@ -380,17 +512,17 @@ export default function Home() {
       <section className="section reviews" id="reviews">
         <div className="section-heading" data-reveal>
           <div>
-            <p className="eyebrow">Отзывы</p>
-            <h2>Возвращаются<br /><em>не только за маникюром</em></h2>
+            <p className="eyebrow">Стандарты сервиса</p>
+            <h2>Спокойно на каждом<br /><em>этапе записи</em></h2>
           </div>
-          <p>Небольшая выборка слов, которыми клиенты делятся после визита.</p>
+          <p>Здесь только те обещания, которые поддерживает сама система записи и рабочий процесс мастера.</p>
         </div>
         <div className="review-grid">
-          {reviews.map((review, index) => (
-            <article className="review-card" key={review.name} data-reveal style={{ "--delay": `${index * 90}ms` } as React.CSSProperties}>
-              <div className="review-top"><span className="stars">★★★★★</span><small>5.0</small></div>
-              <p>«{review.text}»</p>
-              <div className="review-author"><span>{review.name[0]}</span><b>{review.name}</b></div>
+          {commitments.map((item, index) => (
+            <article className="review-card" key={item.title} data-reveal style={{ "--delay": `${index * 90}ms` } as React.CSSProperties}>
+              <div className="review-top"><span className="standards-check">✓</span><small>стандарт</small></div>
+              <p>{item.text}</p>
+              <div className="review-author"><span>{String(index + 1).padStart(2, "0")}</span><b>{item.title}</b></div>
             </article>
           ))}
         </div>
@@ -426,60 +558,42 @@ export default function Home() {
         </div>
       </section>
 
-      <section className={bookingPulse ? "booking is-pulsing" : "booking"} id="booking">
+      <section className="booking" id="booking">
         <div className="booking-copy" data-reveal>
-          <p className="eyebrow">Онлайн-запись</p>
+          <p className="eyebrow">Запись в Telegram</p>
           <h2>Готовы к маникюру,<br /><em>который подходит вам?</em></h2>
-          <p>Оставьте контакты и удобное время. Я отвечу, уточню детали и подтвержу запись.</p>
-          <div className="booking-note"><span>✓</span> Обычно отвечаю в течение 15 минут</div>
+          <p>Выберите услугу и удобное время в Mini App. Подтверждение записи придёт прямо в Telegram.</p>
+          <div className="booking-note"><span>✓</span> Быстро, удобно и без звонков</div>
         </div>
 
-        {submitted ? (
-          <div className="success-card" role="status" data-reveal>
-            <span>✓</span>
-            <h3>Форма заполнена</h3>
-            <p>Фронтенд-сценарий готов. После подключения вашего Telegram, CRM или сервиса онлайн-записи заявка будет уходить мастеру автоматически.</p>
-            <button className="text-link" type="button" onClick={() => setSubmitted(false)}>Заполнить ещё раз <Arrow /></button>
-          </div>
-        ) : (
-          <form className="booking-form" onSubmit={handleSubmit} data-reveal style={{ "--delay": "120ms" } as React.CSSProperties}>
-            <label>
-              <span>Ваше имя</span>
-              <input name="name" autoComplete="name" placeholder="Например, Мария" required />
-            </label>
-            <label>
-              <span>Телефон или Telegram</span>
-              <input name="contact" autoComplete="tel" placeholder="+7 999 000-00-00" required />
-            </label>
-            <label>
-              <span>Услуга</span>
-              <select name="service" defaultValue="Маникюр + покрытие">
-                {services.map((service) => <option key={service.title}>{service.title}</option>)}
-              </select>
-            </label>
-            <label>
-              <span>Когда удобно</span>
-              <input name="time" placeholder="Например, будни после 18:00" required />
-            </label>
-            <button className="button" type="submit">Оставить заявку <Arrow /></button>
-            <small>Нажимая кнопку, вы соглашаетесь на обработку данных для связи по заявке.</small>
-          </form>
-        )}
+        <div className="telegram-booking-card" data-reveal style={{ "--delay": "120ms" } as React.CSSProperties}>
+          <span className="telegram-booking-mark" aria-hidden="true">↗</span>
+          <p className="eyebrow">Telegram Mini App</p>
+          <h3>Свободные окна уже внутри</h3>
+          <p>Откройте приложение, выберите услугу, дату и удобное время — всё займёт пару минут.</p>
+          <a className="button" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">
+            Открыть запись <Arrow />
+          </a>
+          <a className="text-link telegram-fallback" href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer">
+            Если приложение не открылось — написать боту <Arrow />
+          </a>
+        </div>
       </section>
 
       <footer>
-        <a className="brand footer-brand" href="#top">
+        <a className="brand footer-brand" href="#top" onClick={(event) => jumpToSection(event, "top")}>
           <span>NAILÉ</span>
           <small>маникюр с характером</small>
         </a>
         <p>Тихая эстетика. Точная работа. Ваши руки — только лучше.</p>
         <div className="footer-links">
-          <a href="#services">Услуги</a>
-          <a href="#portfolio">Портфолио</a>
-          <a href="#faq">FAQ</a>
-          <button type="button" onClick={goToBooking}>Записаться <Arrow /></button>
+          <a href="#services" onClick={(event) => jumpToSection(event, "services")}>Услуги</a>
+          <a href="#portfolio" onClick={(event) => jumpToSection(event, "portfolio")}>Портфолио</a>
+          <a href="#faq" onClick={(event) => jumpToSection(event, "faq")}>FAQ</a>
+          <a className="footer-booking-link" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">Записаться <Arrow /></a>
         </div>
         <small>© 2026 NAILÉ. Все права защищены.</small>
+        <small className="demo-notice">Демонстрационный проект: перед коммерческим запуском замените фотографии и сведения о мастере на подтверждённые материалы.</small>
       </footer>
     </main>
   );

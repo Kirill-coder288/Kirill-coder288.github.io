@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 
+const PUBLIC_ORIGIN = "https://kirill-coder288.github.io";
+
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
@@ -11,7 +13,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(origin),
     title: "NAILÉ — маникюр с характером",
-    description: "Бережный маникюр, тонкое покрытие и спокойная атмосфера. Онлайн-запись к мастеру Анне.",
+    description: "Бережный маникюр, тонкое покрытие и спокойная атмосфера. Онлайн-запись через Telegram Mini App.",
+    alternates: { canonical: PUBLIC_ORIGIN },
+    manifest: "/manifest.webmanifest",
+    robots: { index: true, follow: true },
     icons: {
       icon: "/favicon.png",
       shortcut: "/favicon.png",
@@ -34,9 +39,37 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "BeautySalon",
+    name: "NAILÉ",
+    description: "Маникюр и онлайн-запись через Telegram Mini App.",
+    url: PUBLIC_ORIGIN,
+    image: `${PUBLIC_ORIGIN}/og.png`,
+    sameAs: ["https://t.me/nogti000bot"],
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Услуги маникюра",
+      itemListElement: [
+        ["Маникюр", 1200],
+        ["Маникюр + гель-лак", 1900],
+        ["Наращивание", 2800],
+        ["Снятие покрытия", 500],
+        ["Укрепление", 700],
+      ].map(([name, price]) => ({
+        "@type": "Offer",
+        price,
+        priceCurrency: "RUB",
+        itemOffered: { "@type": "Service", name },
+      })),
+    },
+  };
   return (
     <html lang="ru">
-      <body>{children}</body>
+      <body>
+        {children}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replaceAll("<", "\\u003c") }} />
+      </body>
     </html>
   );
 }

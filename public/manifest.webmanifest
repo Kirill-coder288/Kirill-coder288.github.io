@@ -1,0 +1,12 @@
+{
+  "name": "NAILÉ — маникюр с характером",
+  "short_name": "NAILÉ",
+  "description": "Лендинг мастера маникюра с записью через Telegram Mini App.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf8f5",
+  "theme_color": "#e76f85",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
