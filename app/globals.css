@@ -16,6 +16,7 @@
 }
 
 html {
+  scroll-behavior: smooth;
   scroll-padding-top: 96px;
 }
 
@@ -184,6 +185,10 @@ img {
 }
 
 .hero {
+  --hero-x: 0px;
+  --hero-y: 0px;
+  --phone-x: 0px;
+  --phone-y: 0px;
   position: relative;
   display: grid;
   width: min(1360px, 92vw);
@@ -337,7 +342,8 @@ h2 {
   height: 100%;
   object-fit: cover;
   object-position: 42% 50%;
-  transform: scale(1.035);
+  transform: translate3d(var(--hero-x), var(--hero-y), 0) scale(1.035);
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .photo-caption {
@@ -362,7 +368,15 @@ h2 {
   border-radius: 38px;
   background: #171414;
   box-shadow: 0 26px 60px rgba(54, 31, 34, 0.3);
-  transform: rotate(2.2deg);
+  transform: translate3d(var(--phone-x), var(--phone-y), 0) rotate(2.2deg);
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero.is-interacting .hero-photo,
+.hero.is-interacting .phone,
+.hero.is-motion-active .hero-photo,
+.hero.is-motion-active .phone {
+  will-change: transform;
 }
 
 .phone::after {
@@ -664,55 +678,17 @@ h2 {
 }
 
 .portfolio-heading {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
 }
 
-.gallery-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding-bottom: 7px;
-}
-
-.gallery-controls button {
+.work-grid {
   display: grid;
-  width: 48px;
-  height: 48px;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition: background 350ms ease, color 350ms ease, transform 350ms ease;
-}
-
-.gallery-controls button:hover {
-  background: var(--rose);
-  color: #fff;
-  transform: translateY(-3px);
-}
-
-.work-scroll {
-  display: flex;
-  gap: 18px;
-  overflow-x: scroll;
-  overflow-y: hidden;
-  padding: 4px 2px 20px;
-  scroll-snap-type: x proximity;
-  scroll-padding-inline: 2px;
-  scrollbar-width: none;
-  touch-action: pan-x pan-y pinch-zoom;
-  -webkit-overflow-scrolling: touch;
-}
-
-.work-scroll::-webkit-scrollbar {
-  display: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 34px 18px;
 }
 
 .work-card {
-  flex: 0 0 clamp(240px, 22.6vw, 326px);
   margin: 0;
-  scroll-snap-align: start;
 }
 
 .work-image {
@@ -1332,7 +1308,11 @@ footer > small {
   }
 
   .portfolio-heading {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
+  }
+
+  .work-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .about {
@@ -1438,7 +1418,7 @@ footer > small {
     align-self: flex-start;
   }
 
-  .social-proof {
+.social-proof {
     margin-top: 30px;
   }
 
@@ -1554,21 +1534,8 @@ footer > small {
     grid-template-columns: 1fr;
   }
 
-  .gallery-controls {
-    justify-content: flex-start;
-  }
-
   .work-card {
-    flex-basis: min(78vw, 310px);
-    scroll-snap-align: none;
-  }
-
-  .work-scroll {
-    gap: 12px;
-    margin-right: -20px;
-    padding-right: 20px;
-    scroll-padding-inline: 0;
-    scroll-snap-type: none;
+    min-width: 0;
   }
 
   .about {
@@ -1641,6 +1608,31 @@ footer > small {
   }
 }
 
+.motion-permission {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 9px;
+  margin-top: 22px;
+  padding: 0 14px;
+  border: 1px solid rgba(201, 85, 113, 0.26);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.64);
+  color: var(--rose-deep);
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.motion-permission span {
+  font-size: 18px;
+}
+
+.motion-denied {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+}
+
 @media (hover: none), (pointer: coarse) {
   .ambient {
     animation: none;
@@ -1648,7 +1640,25 @@ footer > small {
 
   .hero-photo,
   .phone {
-    transition: none;
+    transition-duration: 320ms;
+  }
+
+  .work-grid {
+    gap: 28px 14px;
+  }
+
+  .work-card {
+    min-width: 0;
+  }
+
+  .work-image {
+    border-radius: 72px 72px 10px 10px;
+  }
+
+  .work-card figcaption {
+    gap: 8px;
+    padding-top: 11px;
+    font-size: clamp(14px, 4vw, 18px);
   }
 }
 

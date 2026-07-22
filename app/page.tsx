@@ -5,6 +5,10 @@ import { useEffect, useRef, useState } from "react";
 const TELEGRAM_MINI_APP_URL = "https://t.me/nogti000bot?startapp=landing";
 const TELEGRAM_BOT_URL = "https://t.me/nogti000bot";
 
+type OrientationEventConstructor = typeof DeviceOrientationEvent & {
+  requestPermission?: () => Promise<PermissionState>;
+};
+
 const services = [
   {
     number: "01",
@@ -86,7 +90,8 @@ function Arrow({ direction = "right" }: { direction?: "left" | "right" }) {
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const galleryRef = useRef<HTMLDivElement>(null);
+  const [motionPermission, setMotionPermission] = useState<"unsupported" | "prompt" | "enabled" | "denied">("unsupported");
+  const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     document.documentElement.classList.add("motion-ready");
@@ -117,15 +122,125 @@ export default function Home() {
     };
   }, []);
 
-  const moveGallery = (direction: -1 | 1) => {
-    const gallery = galleryRef.current;
-    if (!gallery) return;
-    const card = gallery.querySelector<HTMLElement>(".work-card");
-    const step = (card?.offsetWidth ?? 320) + 18;
-    const atEnd = gallery.scrollLeft + gallery.clientWidth >= gallery.scrollWidth - step / 2;
-    const atStart = gallery.scrollLeft <= step / 2;
-    const left = direction === 1 && atEnd ? 0 : direction === -1 && atStart ? gallery.scrollWidth : gallery.scrollLeft + step * direction;
-    gallery.scrollTo({ left, behavior: "smooth" });
+  useEffect(() => {
+    const hero = heroRef.current;
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (!hero || !finePointer.matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let frame = 0;
+    let bounds: DOMRect | null = null;
+
+    const reset = () => {
+      cancelAnimationFrame(frame);
+      hero.classList.remove("is-interacting");
+      hero.style.setProperty("--hero-x", "0px");
+      hero.style.setProperty("--hero-y", "0px");
+      hero.style.setProperty("--phone-x", "0px");
+      hero.style.setProperty("--phone-y", "0px");
+      bounds = null;
+    };
+
+    const onPointerEnter = () => {
+      bounds = hero.getBoundingClientRect();
+      hero.classList.add("is-interacting");
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!bounds) bounds = hero.getBoundingClientRect();
+      const px = (event.clientX - bounds.left) / bounds.width - 0.5;
+      const py = (event.clientY - bounds.top) / bounds.height - 0.5;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        hero.style.setProperty("--hero-x", `${px * 10}px`);
+        hero.style.setProperty("--hero-y", `${py * 7}px`);
+        hero.style.setProperty("--phone-x", `${px * -14}px`);
+        hero.style.setProperty("--phone-y", `${py * -10}px`);
+      });
+    };
+
+    hero.addEventListener("pointerenter", onPointerEnter);
+    hero.addEventListener("pointermove", onPointerMove);
+    hero.addEventListener("pointerleave", reset);
+    return () => {
+      cancelAnimationFrame(frame);
+      hero.removeEventListener("pointerenter", onPointerEnter);
+      hero.removeEventListener("pointermove", onPointerMove);
+      hero.removeEventListener("pointerleave", reset);
+    };
+  }, []);
+
+  useEffect(() => {
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    if (!coarsePointer || !("DeviceOrientationEvent" in window)) return;
+
+    const OrientationEvent = window.DeviceOrientationEvent as OrientationEventConstructor;
+    setMotionPermission(typeof OrientationEvent.requestPermission === "function" ? "prompt" : "enabled");
+  }, []);
+
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero || motionPermission !== "enabled" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let frame = 0;
+    let baseBeta: number | null = null;
+    let baseGamma: number | null = null;
+    let heroVisible = true;
+
+    const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value));
+    const onOrientation = (event: DeviceOrientationEvent) => {
+      if (!heroVisible) return;
+      if (event.beta === null || event.gamma === null) return;
+      baseBeta ??= event.beta;
+      baseGamma ??= event.gamma;
+      const x = clamp(event.gamma - baseGamma, 18) / 18;
+      const y = clamp(event.beta - baseBeta, 18) / 18;
+
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        hero.style.setProperty("--hero-x", `${x * 8}px`);
+        hero.style.setProperty("--hero-y", `${y * 6}px`);
+        hero.style.setProperty("--phone-x", `${x * -11}px`);
+        hero.style.setProperty("--phone-y", `${y * -8}px`);
+      });
+    };
+
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        heroVisible = entry.isIntersecting;
+        if (!heroVisible) {
+          cancelAnimationFrame(frame);
+          hero.style.setProperty("--hero-x", "0px");
+          hero.style.setProperty("--hero-y", "0px");
+          hero.style.setProperty("--phone-x", "0px");
+          hero.style.setProperty("--phone-y", "0px");
+        }
+      },
+      { threshold: 0.05 },
+    );
+
+    hero.classList.add("is-motion-active");
+    visibilityObserver.observe(hero);
+    window.addEventListener("deviceorientation", onOrientation, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      hero.classList.remove("is-motion-active");
+      visibilityObserver.disconnect();
+      window.removeEventListener("deviceorientation", onOrientation);
+    };
+  }, [motionPermission]);
+
+  const enableDeviceMotion = async () => {
+    const OrientationEvent = window.DeviceOrientationEvent as OrientationEventConstructor | undefined;
+    if (!OrientationEvent) return;
+
+    try {
+      const permission = typeof OrientationEvent.requestPermission === "function"
+        ? await OrientationEvent.requestPermission()
+        : "granted";
+      setMotionPermission(permission === "granted" ? "enabled" : "denied");
+    } catch {
+      setMotionPermission("denied");
+    }
   };
 
   return (
@@ -167,7 +282,7 @@ export default function Home() {
         </a>
       </header>
 
-      <section className="hero" id="top">
+      <section className="hero" id="top" ref={heroRef}>
         <div className="ambient ambient-one" aria-hidden="true" />
         <div className="ambient ambient-two" aria-hidden="true" />
 
@@ -188,6 +303,14 @@ export default function Home() {
             </a>
             <a className="text-link" href="#portfolio">Посмотреть работы <Arrow /></a>
           </div>
+          {motionPermission === "prompt" && (
+            <button className="motion-permission" type="button" onClick={enableDeviceMotion}>
+              <span aria-hidden="true">◌</span> Включить движение от телефона
+            </button>
+          )}
+          {motionPermission === "denied" && (
+            <p className="motion-denied" role="status">Доступ к движению отключён в настройках браузера.</p>
+          )}
           <div className="social-proof" aria-label="Рейтинг мастера 5 из 5">
             <div className="avatar-stack" aria-hidden="true">
               <span>М</span><span>Е</span><span>А</span>
@@ -272,17 +395,9 @@ export default function Home() {
             <p className="eyebrow">Портфолио</p>
             <h2>Маникюр, который<br /><em>хочется рассматривать</em></h2>
           </div>
-          <div className="gallery-controls">
-            <button type="button" onClick={() => moveGallery(-1)} aria-label="Предыдущие работы"><Arrow direction="left" /></button>
-            <button type="button" onClick={() => moveGallery(1)} aria-label="Следующие работы"><Arrow /></button>
-          </div>
         </div>
 
-        <div
-          className="work-scroll"
-          ref={galleryRef}
-          data-reveal
-        >
+        <div className="work-grid" data-reveal>
           {works.map(([src, title], index) => (
             <figure className="work-card" key={src}>
               <div className="work-image">

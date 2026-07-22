@@ -24,6 +24,7 @@ test("server-renders the finished NAILÉ landing page", async () => {
   assert.match(html, /<title>NAILÉ — маникюр с характером<\/title>/i);
   assert.match(html, /id="services"/);
   assert.match(html, /id="portfolio"/);
+  assert.match(html, /href="#portfolio"/);
   assert.match(html, /id="about"/);
   assert.match(html, /id="faq"/);
   assert.match(html, /id="booking"/);
@@ -47,10 +48,12 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(page, /IntersectionObserver/);
   assert.match(page, /prefers-reduced-motion/);
   assert.match(page, /aria-expanded=\{isOpen\}/);
-  assert.match(page, /gallery\.scrollTo/);
   assert.doesNotMatch(page, /setInterval/);
-  assert.doesNotMatch(page, /pointermove/);
+  assert.match(page, /pointermove/);
   assert.doesNotMatch(page, /window\.addEventListener\("scroll"/);
+  assert.match(page, /DeviceOrientationEvent/);
+  assert.match(page, /requestPermission/);
+  assert.match(page, /deviceorientation/);
   assert.match(page, /decoding="async"/);
   assert.match(page, /TELEGRAM_MINI_APP_URL/);
   assert.match(page, /TELEGRAM_BOT_URL/);
@@ -59,10 +62,11 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(layout, /x-forwarded-host/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@keyframes ambient-float/);
-  assert.match(css, /scroll-snap-type: x proximity/);
-  assert.match(css, /touch-action: pan-x pan-y pinch-zoom/);
-  assert.doesNotMatch(css, /scroll-snap-type: x mandatory/);
-  assert.doesNotMatch(css, /overscroll-behavior-inline: contain/);
+  assert.match(page, /className="work-grid"/);
+  assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.doesNotMatch(css, /scroll-snap-type/);
+  assert.doesNotMatch(css, /overflow-x: scroll/);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 
