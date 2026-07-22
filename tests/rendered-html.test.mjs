@@ -47,18 +47,21 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(page, /scrollIntoView/);
   assert.match(page, /aria-expanded=\{isOpen\}/);
   assert.match(page, /gallery\.scrollTo/);
+  assert.match(page, /galleryActive/);
+  assert.doesNotMatch(page, /window\.addEventListener\("scroll"/);
   assert.match(page, /onSubmit=\{handleSubmit\}/);
   assert.match(layout, /generateMetadata/);
   assert.match(layout, /x-forwarded-host/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@keyframes ambient-float/);
   assert.match(css, /@keyframes booking-focus/);
+  assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 
   await Promise.all([
     access(new URL("../public/images/hero.webp", import.meta.url)),
     access(new URL("../public/images/master.webp", import.meta.url)),
-    access(new URL("../public/images/work-6.webp", import.meta.url)),
+    access(new URL("../public/images/work-6-v2.webp", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
   ]);
 });

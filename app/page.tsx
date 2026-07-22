@@ -34,12 +34,12 @@ const services = [
 ];
 
 const works = [
-  ["/images/work-1.webp", "Молочный нюд"],
-  ["/images/work-2.webp", "Микро-френч"],
-  ["/images/work-3.webp", "Полупрозрачный розовый"],
-  ["/images/work-4.webp", "Приглушённая роза"],
-  ["/images/work-5.webp", "Жемчужный акцент"],
-  ["/images/work-6.webp", "Тёплый хром"],
+  ["/images/work-1-v2.webp", "Молочный нюд"],
+  ["/images/work-2-v2.webp", "Микро-френч"],
+  ["/images/work-3-v2.webp", "Полупрозрачный розовый"],
+  ["/images/work-4-v2.webp", "Приглушённая роза"],
+  ["/images/work-5-v2.webp", "Жемчужный акцент"],
+  ["/images/work-6-v2.webp", "Тёплый хром"],
 ];
 
 const reviews = [
@@ -86,6 +86,7 @@ export default function Home() {
   const [submitted, setSubmitted] = useState(false);
   const [bookingPulse, setBookingPulse] = useState(false);
   const [galleryPaused, setGalleryPaused] = useState(false);
+  const [galleryActive, setGalleryActive] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
 
@@ -120,7 +121,8 @@ export default function Home() {
 
   useEffect(() => {
     const hero = heroRef.current;
-    if (!hero || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const canParallax = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (!hero || !canParallax || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let frame = 0;
     const update = (event?: PointerEvent) => {
@@ -129,33 +131,44 @@ export default function Home() {
         const rect = hero.getBoundingClientRect();
         const px = event ? (event.clientX - rect.left) / rect.width - 0.5 : 0;
         const py = event ? (event.clientY - rect.top) / rect.height - 0.5 : 0;
-        const scroll = Math.max(-1, Math.min(1, -rect.top / Math.max(rect.height, 1)));
         hero.style.setProperty("--hero-x", `${px * 10}px`);
-        hero.style.setProperty("--hero-y", `${py * 8 + scroll * 11}px`);
+        hero.style.setProperty("--hero-y", `${py * 8}px`);
         hero.style.setProperty("--phone-x", `${px * -16}px`);
-        hero.style.setProperty("--phone-y", `${py * -12 + scroll * 22}px`);
+        hero.style.setProperty("--phone-y", `${py * -12}px`);
       });
     };
 
     const onPointerMove = (event: PointerEvent) => update(event);
     const onPointerLeave = () => update();
-    const onScroll = () => update();
     hero.addEventListener("pointermove", onPointerMove);
     hero.addEventListener("pointerleave", onPointerLeave);
-    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       cancelAnimationFrame(frame);
       hero.removeEventListener("pointermove", onPointerMove);
       hero.removeEventListener("pointerleave", onPointerLeave);
-      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
   useEffect(() => {
-    if (galleryPaused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const gallery = galleryRef.current;
+    if (!gallery || !("IntersectionObserver" in window)) {
+      setGalleryActive(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setGalleryActive(entry.isIntersecting),
+      { threshold: 0.2 },
+    );
+    observer.observe(gallery);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!galleryActive || galleryPaused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = window.setInterval(() => moveGallery(1), 4200);
     return () => window.clearInterval(timer);
-  }, [galleryPaused]);
+  }, [galleryActive, galleryPaused]);
 
   const moveGallery = (direction: -1 | 1) => {
     const gallery = galleryRef.current;
