@@ -1224,13 +1224,15 @@ footer > small {
     gap: 22px;
     background: rgba(255, 250, 247, 0.98);
     opacity: 0;
+    pointer-events: none;
     transform: translateY(-10px);
-    transition: opacity 400ms ease, transform 400ms ease, visibility 400ms;
+    transition: opacity 300ms ease, transform 300ms ease;
   }
 
   .nav.is-open {
     visibility: visible;
     opacity: 1;
+    pointer-events: auto;
     transform: translateY(0);
   }
 

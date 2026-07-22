@@ -78,6 +78,9 @@ test("ships the interaction, accessibility and motion contracts", async () => {
   assert.match(css, /\.portfolio\s*\{[^}]*touch-action:\s*pan-y pinch-zoom/s);
   assert.match(css, /button,\s*a\s*\{[^}]*touch-action:\s*manipulation/s);
   assert.match(css, /\.button::before\s*\{[^}]*pointer-events:\s*none/s);
+  assert.match(css, /\.nav\s*\{[^}]*pointer-events:\s*none/s);
+  assert.match(css, /\.nav\.is-open\s*\{[^}]*pointer-events:\s*auto/s);
+  assert.doesNotMatch(css, /transition:[^;]*visibility/);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 
