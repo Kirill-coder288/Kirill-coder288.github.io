@@ -1,6 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const TELEGRAM_MINI_APP_URL = "https://t.me/nogti000bot?startapp=landing";
+const TELEGRAM_BOT_URL = "https://t.me/nogti000bot";
 
 const services = [
   {
@@ -83,8 +86,6 @@ function Arrow({ direction = "right" }: { direction?: "left" | "right" }) {
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [submitted, setSubmitted] = useState(false);
-  const [bookingPulse, setBookingPulse] = useState(false);
   const [galleryPaused, setGalleryPaused] = useState(false);
   const [galleryActive, setGalleryActive] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
@@ -181,22 +182,6 @@ export default function Home() {
     gallery.scrollTo({ left, behavior: "smooth" });
   };
 
-  const goToBooking = () => {
-    setMenuOpen(false);
-    setBookingPulse(false);
-    window.requestAnimationFrame(() => {
-      setBookingPulse(true);
-      document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      window.setTimeout(() => setBookingPulse(false), 1400);
-    });
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSubmitted(true);
-    event.currentTarget.reset();
-  };
-
   return (
     <main>
       <header className="site-header" aria-label="Основная навигация">
@@ -225,9 +210,15 @@ export default function Home() {
           <a href="#faq" onClick={() => setMenuOpen(false)}>FAQ</a>
         </nav>
 
-        <button className="button button-small header-cta" type="button" onClick={goToBooking}>
+        <a
+          className="button button-small header-cta"
+          href={TELEGRAM_MINI_APP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setMenuOpen(false)}
+        >
           Записаться
-        </button>
+        </a>
       </header>
 
       <section className="hero" id="top" ref={heroRef}>
@@ -246,9 +237,9 @@ export default function Home() {
             без спешки и лишнего.
           </p>
           <div className="hero-actions">
-            <button className="button" type="button" onClick={goToBooking}>
+            <a className="button" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">
               Выбрать время <Arrow />
-            </button>
+            </a>
             <a className="text-link" href="#portfolio">Посмотреть работы <Arrow /></a>
           </div>
           <div className="social-proof" aria-label="Рейтинг мастера 5 из 5">
@@ -277,8 +268,8 @@ export default function Home() {
                 <span>Ближайшее окно</span>
                 <b>Сегодня, 17:30</b>
               </div>
-              <button type="button" onClick={goToBooking}>Выбрать время</button>
-              <div className="phone-note">Подтверждение в течение 15 минут</div>
+              <a className="phone-booking-link" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">Выбрать время</a>
+              <div className="phone-note">Запись откроется в Telegram</div>
             </div>
           </div>
         </div>
@@ -315,9 +306,15 @@ export default function Home() {
                 <small>{service.time}</small>
                 <strong>{service.price}</strong>
               </div>
-              <button type="button" onClick={goToBooking} aria-label={`Записаться: ${service.title}`}>
+              <a
+                className="service-booking-link"
+                href={TELEGRAM_MINI_APP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Записаться в Telegram: ${service.title}`}
+              >
                 <Arrow />
-              </button>
+              </a>
             </article>
           ))}
         </div>
@@ -426,45 +423,26 @@ export default function Home() {
         </div>
       </section>
 
-      <section className={bookingPulse ? "booking is-pulsing" : "booking"} id="booking">
+      <section className="booking" id="booking">
         <div className="booking-copy" data-reveal>
-          <p className="eyebrow">Онлайн-запись</p>
+          <p className="eyebrow">Запись в Telegram</p>
           <h2>Готовы к маникюру,<br /><em>который подходит вам?</em></h2>
-          <p>Оставьте контакты и удобное время. Я отвечу, уточню детали и подтвержу запись.</p>
-          <div className="booking-note"><span>✓</span> Обычно отвечаю в течение 15 минут</div>
+          <p>Выберите услугу и удобное время в Mini App. Подтверждение записи придёт прямо в Telegram.</p>
+          <div className="booking-note"><span>✓</span> Быстро, удобно и без звонков</div>
         </div>
 
-        {submitted ? (
-          <div className="success-card" role="status" data-reveal>
-            <span>✓</span>
-            <h3>Форма заполнена</h3>
-            <p>Фронтенд-сценарий готов. После подключения вашего Telegram, CRM или сервиса онлайн-записи заявка будет уходить мастеру автоматически.</p>
-            <button className="text-link" type="button" onClick={() => setSubmitted(false)}>Заполнить ещё раз <Arrow /></button>
-          </div>
-        ) : (
-          <form className="booking-form" onSubmit={handleSubmit} data-reveal style={{ "--delay": "120ms" } as React.CSSProperties}>
-            <label>
-              <span>Ваше имя</span>
-              <input name="name" autoComplete="name" placeholder="Например, Мария" required />
-            </label>
-            <label>
-              <span>Телефон или Telegram</span>
-              <input name="contact" autoComplete="tel" placeholder="+7 999 000-00-00" required />
-            </label>
-            <label>
-              <span>Услуга</span>
-              <select name="service" defaultValue="Маникюр + покрытие">
-                {services.map((service) => <option key={service.title}>{service.title}</option>)}
-              </select>
-            </label>
-            <label>
-              <span>Когда удобно</span>
-              <input name="time" placeholder="Например, будни после 18:00" required />
-            </label>
-            <button className="button" type="submit">Оставить заявку <Arrow /></button>
-            <small>Нажимая кнопку, вы соглашаетесь на обработку данных для связи по заявке.</small>
-          </form>
-        )}
+        <div className="telegram-booking-card" data-reveal style={{ "--delay": "120ms" } as React.CSSProperties}>
+          <span className="telegram-booking-mark" aria-hidden="true">↗</span>
+          <p className="eyebrow">Telegram Mini App</p>
+          <h3>Свободные окна уже внутри</h3>
+          <p>Откройте приложение, выберите услугу, дату и удобное время — всё займёт пару минут.</p>
+          <a className="button" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">
+            Открыть запись <Arrow />
+          </a>
+          <a className="text-link telegram-fallback" href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer">
+            Если приложение не открылось — написать боту <Arrow />
+          </a>
+        </div>
       </section>
 
       <footer>
@@ -477,7 +455,7 @@ export default function Home() {
           <a href="#services">Услуги</a>
           <a href="#portfolio">Портфолио</a>
           <a href="#faq">FAQ</a>
-          <button type="button" onClick={goToBooking}>Записаться <Arrow /></button>
+          <a className="footer-booking-link" href={TELEGRAM_MINI_APP_URL} target="_blank" rel="noopener noreferrer">Записаться <Arrow /></a>
         </div>
         <small>© 2026 NAILÉ. Все права защищены.</small>
       </footer>

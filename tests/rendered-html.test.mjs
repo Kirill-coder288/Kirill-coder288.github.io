@@ -29,7 +29,9 @@ test("server-renders the finished NAILÉ landing page", async () => {
   assert.match(html, /id="booking"/);
   assert.match(html, /aria-controls="main-navigation"/);
   assert.match(html, /Маникюр \+ покрытие/);
-  assert.match(html, /Оставить заявку/);
+  assert.match(html, /Открыть запись/);
+  assert.match(html, /https:\/\/t\.me\/nogti000bot\?startapp=landing/);
+  assert.match(html, /https:\/\/t\.me\/nogti000bot/);
   assert.match(html, /property="og:image" content="http:\/\/localhost(?::3000)?\/og\.png"/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
@@ -44,17 +46,17 @@ test("ships the interaction, accessibility and motion contracts", async () => {
 
   assert.match(page, /IntersectionObserver/);
   assert.match(page, /prefers-reduced-motion/);
-  assert.match(page, /scrollIntoView/);
   assert.match(page, /aria-expanded=\{isOpen\}/);
   assert.match(page, /gallery\.scrollTo/);
   assert.match(page, /galleryActive/);
   assert.doesNotMatch(page, /window\.addEventListener\("scroll"/);
-  assert.match(page, /onSubmit=\{handleSubmit\}/);
+  assert.match(page, /TELEGRAM_MINI_APP_URL/);
+  assert.match(page, /TELEGRAM_BOT_URL/);
+  assert.doesNotMatch(page, /\/api\b/);
   assert.match(layout, /generateMetadata/);
   assert.match(layout, /x-forwarded-host/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@keyframes ambient-float/);
-  assert.match(css, /@keyframes booking-focus/);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 
