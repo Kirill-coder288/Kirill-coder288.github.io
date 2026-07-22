@@ -35,6 +35,9 @@ test("server-renders the finished NAILÉ landing page", async () => {
   assert.match(html, /https:\/\/t\.me\/nogti000bot\?startapp=service_1/);
   assert.match(html, /https:\/\/t\.me\/nogti000bot\?startapp=service_5/);
   assert.match(html, /https:\/\/t\.me\/nogti000bot/);
+  assert.match(html, /Заявка через Telegram/);
+  assert.match(html, /мастер напишет, уточнит детали и предоплату/);
+  assert.doesNotMatch(html, /без звонков/i);
   assert.match(html, /property="og:image" content="http:\/\/localhost(?::3000)?\/og\.png"/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
   assert.doesNotMatch(html, /200 довольных|500\+|30\+|Сегодня, 17:30/);
